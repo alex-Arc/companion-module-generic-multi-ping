@@ -1,4 +1,6 @@
-var InstanceSkel = require('../../instance_skel');
+const { InstanceBase, InstanceStatus, runEntrypoint } = require('@companion-module/base')
+
+const UpgradeScripts = require('./src/upgrades')
 
 const configFields = require('./src/configFields');
 const api = require('./src/api');
@@ -7,11 +9,19 @@ const variables = require('./src/variables');
 const feedbacks = require('./src/feedbacks');
 const presets = require('./src/presets');
 
-class GenericPingInstance extends InstanceSkel {
-	constructor(system, id, config) {
-		super(system, id, config)
+class GenericPingInstance extends InstanceBase {
+	constructor(internal) {
+		super(internal)
 
-		this.config = config
+		// Assign the methods from the listed files to this class
+		Object.assign(this, {
+			...configFields,
+			...api,
+			...actions,
+			...variables,
+			...feedbacks,
+			...presets,			
+		})
 
 		this.INTERVAL = null;
 
@@ -24,57 +34,38 @@ class GenericPingInstance extends InstanceSkel {
 
 		this.PING_INTERVAL = null;
 		this.STOP_PING = false;
-
-		// Assign the methods from the listed files to this class
-		Object.assign(this, {
-			...configFields,
-			...api,
-			...actions,
-			...variables,
-			...feedbacks,
-			...presets,			
-		})
 	}
 
-	init() {
-		this.status(this.STATUS_UNKNOWN);
-
-		// Update the config
-		this.updateConfig();
+	async init(config) {
+		this.configUpdated(config);
 	}
 
-	updateConfig(config) {
-		if (config) {
-			this.config = config
-		}
+	async configUpdated(config) {
+		this.config = config
 
-		// Quickly check if certain config values are present and continue setup
-		if (this.config.host) {
+		this.initActions();
+		this.initFeedbacks();
+		this.initVariables();
+		this.initPresets();
+
+		this.checkVariables();
+		this.checkFeedbacks();
+
+		this.updateStatus(InstanceStatus.Ok);
+
+		if (this.config.host && this.config.host !== '') {
 			if (this.PING_INTERVAL) {
 				this.stopPing();
 			}
 
-			// Init the Actions
-			this.actions();
-
-			// Init and Update Variables
-			this.updateVariableDefinitions();
-			this.checkVariables();
-
-			// Init the Feedbacks
-			this.feedbacks();
-
-			// Init the Presets
-			this.presets();
-
-			this.status(this.STATUS_UNKNOWN);
+			this.updateStatus(InstanceStatus.UnknownWarning);
 
 			this.STOP_PING = false;
 			this.startPing();
 		}
 	}
 
-	destroy() {
+	async destroy() {
 		//close out any connections
 		this.stopPing();
 
@@ -82,4 +73,4 @@ class GenericPingInstance extends InstanceSkel {
 	}
 }
 
-module.exports = GenericPingInstance;
+runEntrypoint(GenericPingInstance, UpgradeScripts)

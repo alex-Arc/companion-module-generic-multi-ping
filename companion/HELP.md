@@ -10,8 +10,9 @@ This module will allow you to ping a remote device and use the response in a var
 
 If you wish to perform an action based on a ping state, use a Trigger with the variables built into this module.
 
-* Start Ping (Ping will auto start when module is configured, but if you want to stop pinging and restart it, use this action)
-* Stop Ping (Variables and Feedbacks will stop working also)
+* Start Ping Interval (Ping will auto start when module is configured, but if you want to stop pinging and restart it, use this action)
+* Stop Ping Interval (Variables and Feedbacks will stop working also)
+* Send Custom Ping (Specify a custom host outside of the module config to send a ping to; ping results can be sent to a custom variable)
 
 ## Variables
 
@@ -24,6 +25,3 @@ If you wish to perform an action based on a ping state, use a Trigger with the v
 ## Feedbacks
 
 * Set button to color if Host is Alive or Not Alive
-
-## Sponsored By
-This module's availability to Companion was sponsored in part by Paul Munday, <pmunday@acsmedia.com>.

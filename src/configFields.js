@@ -1,8 +1,8 @@
 module.exports = {
-	config_fields() {
+	getConfigFields() {
 		return [
 			{
-				type: 'text',
+				type: 'static-text',
 				id: 'info',
 				width: 12,
 				label: 'Information',
@@ -30,7 +30,7 @@ module.exports = {
 				default: 60000,
 			},
 			{
-				type: 'text',
+				type: 'static-text',
 				id: 'dummy2',
 				width: 12,
 				label: ' ',

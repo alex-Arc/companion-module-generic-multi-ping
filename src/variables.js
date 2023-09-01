@@ -1,13 +1,13 @@
 module.exports = {
-	updateVariableDefinitions() {
+	initVariables() {
 		let variables = [
-			{ label: 'Host', name: 'host'},
-			{ label: 'Alive State', name: 'alive'},
-			{ label: 'Response Time (Min)', name: 'response_time_min'},
-			{ label: 'Response Time (Max)', name: 'response_time_max'},
-			{ label: 'Response Time (Avg)', name: 'response_time_avg'},
-			{ label: 'Packet Loss %', name: 'packet_loss'},
-			{ label: 'Last Date/Time Ping', name: 'last_ping'}
+			{ name: 'Host', variableId: 'host'},
+			{ name: 'Alive State', variableId: 'alive'},
+			{ name: 'Response Time (Min)', variableId: 'response_time_min'},
+			{ name: 'Response Time (Max)', variableId: 'response_time_max'},
+			{ name: 'Response Time (Avg)', variableId: 'response_time_avg'},
+			{ name: 'Packet Loss %', variableId: 'packet_loss'},
+			{ name: 'Last Date/Time Ping', variableId: 'last_ping'}
 		]
 
 		this.setVariableDefinitions(variables);
@@ -15,13 +15,17 @@ module.exports = {
 
 	checkVariables() {
 		try {
-			this.setVariable('host', this.config.host);
-			this.setVariable('alive', (this.alive ? 'True' : 'False'));
-			this.setVariable('response_time_min', this.min);
-			this.setVariable('response_time_max', this.max);
-			this.setVariable('response_time_avg', this.avg);
-			this.setVariable('packet_loss', this.packetLoss);
-			this.setVariable('last_ping', this.lastping);
+			let variableObj = {};
+
+			variableObj['host'] = this.config.host;
+			variableObj['alive'] = (this.alive ? 'True' : 'False');
+			variableObj['response_time_min'] = this.min;
+			variableObj['response_time_max'] = this.max;
+			variableObj['response_time_avg'] = this.avg;
+			variableObj['packet_loss'] = this.packetLoss;
+			variableObj['last_ping'] = this.lastping;
+
+			this.setVariableValues(variableObj);
 		}
 		catch(error) {
 			//do something with that error

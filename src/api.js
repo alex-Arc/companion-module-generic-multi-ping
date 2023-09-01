@@ -1,3 +1,5 @@
+const { InstanceStatus } = require('@companion-module/base')
+
 const ping = require('ping');
 
 module.exports = {
@@ -12,6 +14,10 @@ module.exports = {
 		}		
 	},
 
+	sendCustomPing(host, timeout, customVariable, aliveText, failText) {
+		sendCustomPing.bind(this)(host, timeout, customVariable, aliveText, failText);
+	},
+
 	stopPing() {
 		this.log('info', 'Stopping Ping.');
 		clearInterval(this.PING_INTERVAL);
@@ -21,54 +27,92 @@ module.exports = {
 }
 
 async function sendPing(host, timeout, retryrate) {
+	let self = this;
+
 	try {
-		if (this.config.verbose) {
-			this.log('debug', 'Sending Ping to ' + host);
+		if (self.config.verbose) {
+			self.log('debug', 'Sending Ping to ' + host);
 		}
 
 		if (retryrate == 0) {
-			this.log('info', 'Retry Rate is 0. Module will send one ping, and then stop.');
+			self.log('info', 'Retry Rate is 0. Module will send one ping, and then stop.');
 		}
 
 		let res = await ping.promise.probe(host, {
 			timeout: timeout
 		});
 		
-		this.alive = res.alive;
+		self.alive = res.alive;
 
-		if (this.config.verbose) {
-			//this.log('debug', 'Ping Output: ' + res.output);
+		if (self.config.verbose) {
+			self.log('debug', 'Ping Output: ' + res.output);
 		}		
 
-		this.min = res.min;
-		this.max = res.max;
-		this.avg = res.avg;
-		this.packetLoss = res.packetLoss;
-		this.lastping = new Date();
+		self.min = res.min;
+		self.max = res.max;
+		self.avg = res.avg;
+		self.packetLoss = res.packetLoss;
+		self.lastping = new Date();
 
 		if (res.alive == true) {
-			this.status(this.STATUS_OK);
+			self.updateStatus(InstanceStatus.Ok);
 		}
 		else if (res.alive == false) {
-			this.status(this.STATUS_ERROR);
-			this.log('error', 'Host is not alive.');
+			self.updateStatus(InstanceStatus.ConnectionFailure);
+			self.log('error', 'Host is not alive.');
 		}
 		else {
-			this.status(this.STATUS_UNKNOWN);
+			self.updateStatus(InstanceStatus.UnknownError);
 		}
 
-		this.checkFeedbacks();
-		this.checkVariables();
+		self.checkVariables();
+		self.checkFeedbacks();
 
-		if (this.STOP_PING || retryrate == 0) {
+		if (self.STOP_PING || retryrate == 0) {
 			clearInterval(this.PING_INTERVAL);
-			this.PING_INTERVAL = null;
+			self.PING_INTERVAL = null;
 		}
 		else if (retryrate > 0) {
-			this.PING_INTERVAL = setTimeout(sendPing.bind(this), retryrate, host, timeout, retryrate);
+			self.PING_INTERVAL = setTimeout(sendPing.bind(self), retryrate, host, timeout, retryrate);
 		}		
 	}
 	catch(error) {
-		this.log('error', 'Error pinging: ' + error);
+		self.log('error', 'Error pinging: ' + error);
+	}
+}
+
+async function sendCustomPing(host, timeout, customVariable, aliveText, failText) {
+	let self = this;
+
+	try {
+		if (self.config.verbose) {
+			self.log('debug', 'Sending Custom Ping to ' + host);
+		}
+
+		let res = await ping.promise.probe(host, {
+			timeout: timeout
+		});
+
+		if (res.alive == true) {
+			self.setCustomVariableValue(customVariable, aliveText);
+		}
+		else if (res.alive == false) {
+			self.log('error', 'Custom Ping Host is not alive: ' + host);
+			self.setCustomVariableValue(customVariable, failText);
+		}
+		else {
+			self.log('error', 'Other Error with Custom Ping');
+			self.setCustomVariableValue(customVariable, 'Error');
+		}
+
+		if (self.config.verbose) {
+			self.log('debug', 'Custom Ping Output: ' + res.output);
+		}
+
+		self.checkVariables();
+		self.checkFeedbacks();
+	}
+	catch(error) {
+		self.log('error', 'Error pinging: ' + error);
 	}
 }
